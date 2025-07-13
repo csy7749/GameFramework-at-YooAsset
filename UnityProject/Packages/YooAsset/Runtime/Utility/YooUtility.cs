@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 using System.IO;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace YooAsset
 {
@@ -29,11 +27,25 @@ namespace YooAsset
             if (string.IsNullOrEmpty(str))
                 return str;
 
-            int index = str.LastIndexOf(".");
+            int index = str.LastIndexOf('.');
             if (index == -1)
                 return str;
             else
                 return str.Remove(index); //"assets/config/test.unity3d" --> "assets/config/test"
+        }
+
+        /// <summary>
+        /// URL地址是否包含双斜杠
+        /// 注意：只检查协议之后的部分
+        /// </summary>
+        public static bool HasDoubleSlashes(string url)
+        {
+            if (url == null)
+                throw new ArgumentNullException();
+
+            int protocolIndex = url.IndexOf("://");
+            string partToCheck = protocolIndex == -1 ? url : url.Substring(protocolIndex + 3);
+            return partToCheck.Contains("//") || partToCheck.Contains(@"\\");
         }
 
         /// <summary>
@@ -121,7 +133,7 @@ namespace YooAsset
         public static string ReadAllText(string filePath)
         {
             if (File.Exists(filePath) == false)
-                return string.Empty;
+                return null;
             return File.ReadAllText(filePath, Encoding.UTF8);
         }
 

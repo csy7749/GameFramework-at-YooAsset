@@ -15,6 +15,11 @@ namespace YooAsset.Editor
         public ECompressOption CompressOption = ECompressOption.Uncompressed;
 
         /// <summary>
+        /// 从AssetBundle文件头里剥离Unity版本信息
+        /// </summary>
+        public bool StripUnityVersion = false;
+
+        /// <summary>
         /// 禁止写入类型树结构（可以降低包体和内存并提高加载效率）
         /// </summary>
         public bool DisableWriteTypeTree = false;
@@ -42,6 +47,17 @@ namespace YooAsset.Editor
 
 
         /// <summary>
+        /// 内置着色器资源包名称
+        /// </summary>
+        public string BuiltinShadersBundleName;
+
+        /// <summary>
+        /// Mono脚本资源包名称
+        /// </summary>
+        public string MonoScriptsBundleName;
+
+
+        /// <summary>
         /// 获取可编程构建管线的构建参数
         /// </summary>
         public BundleBuildParameters GetBundleBuildParameters()
@@ -58,6 +74,9 @@ namespace YooAsset.Editor
                 buildParams.BundleCompression = UnityEngine.BuildCompression.LZ4;
             else
                 throw new System.NotImplementedException(CompressOption.ToString());
+
+            if (StripUnityVersion)
+                buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.StripUnityVersion;
 
             if (DisableWriteTypeTree)
                 buildParams.ContentBuildFlags |= UnityEditor.Build.Content.ContentBuildFlags.DisableWriteTypeTree;

@@ -16,7 +16,7 @@ public class FileOffsetEncryption : IEncryptionServices
         }
         
         int offset = 32;
-        byte[] fileData = File.ReadAllBytes(fileInfo.FilePath);
+        byte[] fileData = File.ReadAllBytes(fileInfo.FileLoadPath);
         var encryptedData = new byte[fileData.Length + offset];
         Buffer.BlockCopy(fileData, 0, encryptedData, offset, fileData.Length);
 
@@ -39,7 +39,7 @@ public class FileStreamEncryption : IEncryptionServices
             
         }
         
-        var fileData = File.ReadAllBytes(fileInfo.FilePath);
+        var fileData = File.ReadAllBytes(fileInfo.FileLoadPath);
         for (int i = 0; i < fileData.Length; i++)
         {
             fileData[i] ^= BundleStream.KEY;

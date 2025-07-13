@@ -20,7 +20,7 @@ namespace GameMain
             
             UILoadMgr.Show(UIDefine.UILoadUpdate,$"清理未使用的缓存文件...");
             
-            var operation = GameModule.Resource.ClearUnusedCacheFilesAsync();
+            var operation = GameModule.Resource.ClearCacheFilesAsync();
             operation.Completed += Operation_Completed;
         }
         

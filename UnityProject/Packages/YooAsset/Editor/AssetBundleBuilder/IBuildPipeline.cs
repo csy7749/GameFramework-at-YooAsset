@@ -1,8 +1,13 @@
-﻿
+﻿using UnityEditor;
+using UnityEngine;
+
 namespace YooAsset.Editor
 {
     public interface IBuildPipeline
     {
-        public BuildResult Run(BuildParameters buildParameters, bool enableLog);
+        /// <summary>
+        /// 运行构建任务
+        /// </summary>
+        BuildResult Run(BuildParameters buildParameters, bool enableLog);
     }
 }

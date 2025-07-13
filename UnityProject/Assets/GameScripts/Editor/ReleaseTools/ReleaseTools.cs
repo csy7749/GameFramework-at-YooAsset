@@ -136,7 +136,7 @@ namespace UnityGameFramework.Editor
             buildParameters.BuildinFileRoot = AssetBundleBuilderHelper.GetStreamingAssetsRoot();
             buildParameters.BuildPipeline = buildPipeline.ToString();
             buildParameters.BuildTarget = buildTarget;
-            buildParameters.BuildMode = EBuildMode.IncrementalBuild;
+            buildParameters.BuildBundleType = (int)EBuildBundleType.AssetBundle;
             buildParameters.PackageName = "DefaultPackage";
             buildParameters.PackageVersion = packageVersion;
             buildParameters.VerifyBuildingResult = true;
@@ -164,7 +164,7 @@ namespace UnityGameFramework.Editor
         /// </summary>
         private static IEncryptionServices CreateEncryptionInstance(string packageName, EBuildPipeline buildPipeline)
         {
-            var encryptionClassName = AssetBundleBuilderSetting.GetPackageEncyptionClassName(packageName, buildPipeline);
+            var encryptionClassName = AssetBundleBuilderSetting.GetPackageEncyptionServicesClassName(packageName, buildPipeline.ToString());
             var encryptionClassTypes = EditorTools.GetAssignableTypes(typeof(IEncryptionServices));
             var classType = encryptionClassTypes.Find(x => x.FullName != null && x.FullName.Equals(encryptionClassName));
             if (classType != null)

@@ -43,8 +43,8 @@ namespace GameMain
             var downloader = GameModule.Resource.Downloader;
 
             // 注册下载回调
-            downloader.OnDownloadErrorCallback = OnDownloadErrorCallback;
-            downloader.OnDownloadProgressCallback = OnDownloadProgressCallback;
+            downloader.DownloadErrorCallback = OnDownloadErrorCallback;
+            downloader.DownloadUpdateCallback = OnDownloadProgressCallback;
             downloader.BeginDownload();
             await downloader;
 
@@ -55,34 +55,34 @@ namespace GameMain
             ChangeState<ProcedureDownloadOver>(_procedureOwner);
         }
 
-        private void OnDownloadErrorCallback(string fileName, string error)
+        private void OnDownloadErrorCallback(DownloadErrorData downloadErrorData)
         {
-            UILoadTip.ShowMessageBox($"Failed to download file : {fileName}", MessageShowType.TwoButton,
+            UILoadTip.ShowMessageBox($"Failed to download file : {downloadErrorData.FileName}", MessageShowType.TwoButton,
                 LoadStyle.StyleEnum.Style_Default
                 , () => { ChangeState<ProcedureCreateDownloader>(_procedureOwner); }, UnityEngine.Application.Quit);
         }
 
-        private void OnDownloadProgressCallback(int totalDownloadCount, int currentDownloadCount, long totalDownloadBytes, long currentDownloadBytes)
+        private void OnDownloadProgressCallback(DownloadUpdateData downloadUpdateData)
         {
-            string currentSizeMb = (currentDownloadBytes / 1048576f).ToString("f1");
-            string totalSizeMb = (totalDownloadBytes / 1048576f).ToString("f1");
+            string currentSizeMb = (downloadUpdateData.CurrentDownloadBytes / 1048576f).ToString("f1");
+            string totalSizeMb = (downloadUpdateData.TotalDownloadBytes / 1048576f).ToString("f1");
             // UILoadMgr.Show(UIDefine.UILoadUpdate,$"{currentDownloadCount}/{totalDownloadCount} {currentSizeMb}MB/{totalSizeMb}MB");
-            string descriptionText = Utility.Text.Format("正在更新，已更新{0}，总更新{1}，已更新大小{2}，总更新大小{3}，更新进度{4}，当前网速{5}/s", 
-                currentDownloadCount.ToString(), 
-                totalDownloadCount.ToString(), 
-                Utility.File.GetByteLengthString(currentDownloadBytes), 
-                Utility.File.GetByteLengthString(totalDownloadBytes), 
-                GameModule.Resource.Downloader.Progress, 
+            string descriptionText = Utility.Text.Format("正在更新，已更新{0}，总更新{1}，已更新大小{2}，总更新大小{3}，更新进度{4}，当前网速{5}/s",
+                downloadUpdateData.CurrentDownloadCount.ToString(),
+                downloadUpdateData.TotalDownloadCount.ToString(),
+                Utility.File.GetByteLengthString(downloadUpdateData.CurrentDownloadBytes),
+                Utility.File.GetByteLengthString(downloadUpdateData.TotalDownloadBytes),
+                GameModule.Resource.Downloader.Progress,
                 Utility.File.GetLengthString((int)CurrentSpeed));
             GameEvent.Send(StringId.StringToHash("DownProgress"), GameModule.Resource.Downloader.Progress);
-            UILoadMgr.Show(UIDefine.UILoadUpdate,descriptionText);
+            UILoadMgr.Show(UIDefine.UILoadUpdate, descriptionText);
 
             int needTime = 0;
             if (CurrentSpeed > 0)
             {
-                needTime = (int)((totalDownloadBytes - currentDownloadBytes) / CurrentSpeed);
+                needTime = (int)((downloadUpdateData.TotalDownloadBytes - downloadUpdateData.CurrentDownloadBytes) / CurrentSpeed);
             }
-            
+
             TimeSpan ts = new TimeSpan(0, 0, needTime);
             string timeStr = ts.ToString(@"mm\:ss");
             string updateProgress = Utility.Text.Format("剩余时间 {0}({1}/s)", timeStr, Utility.File.GetLengthString((int)CurrentSpeed));

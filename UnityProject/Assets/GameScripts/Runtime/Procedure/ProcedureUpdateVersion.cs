@@ -48,7 +48,7 @@ namespace GameMain
         {
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
 
-            var operation = GameModule.Resource.UpdatePackageVersionAsync();
+            var operation = GameModule.Resource.RequestPackageVersionAsync();
 
             try
             {

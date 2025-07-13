@@ -340,7 +340,7 @@ namespace GameFramework.Scene
             UnloadScene(sceneAssetName, m_UnloadSceneCallbacks, userData);
         }
 
-        private void LoadSceneSuccessCallback(string sceneAssetName,UnityEngine.SceneManagement.Scene scene, float duration, object userData)
+        private void LoadSceneSuccessCallback(string sceneAssetName, UnityEngine.SceneManagement.Scene scene, float duration, object userData)
         {
             m_LoadingSceneAssetNames.Remove(sceneAssetName);
             m_LoadedSceneAssetNames.Add(sceneAssetName);
@@ -405,16 +405,16 @@ namespace GameFramework.Scene
 
         #region LoadScene
         private string _currentMainSceneName = string.Empty;
-        
+
         private SceneHandle _currentMainScene;
-        
-        private readonly Dictionary<string,SceneHandle> _subScenes = new Dictionary<string, SceneHandle>();
+
+        private readonly Dictionary<string, SceneHandle> _subScenes = new Dictionary<string, SceneHandle>();
 
         /// <summary>
         /// 当前主场景名称。
         /// </summary>
-        public string CurrentMainSceneName => _currentMainSceneName; 
-        
+        public string CurrentMainSceneName => _currentMainSceneName;
+
         /// <summary>
         /// 获取资源定位地址的缓存Key。
         /// </summary>
@@ -429,18 +429,18 @@ namespace GameFramework.Scene
             }
             return $"{packageName}/{location}";
         }
-        
-        private SceneHandle GetSceneHandle(string sceneAssetName, LoadSceneMode sceneMode = LoadSceneMode.Single, bool suspendLoad = false, int priority = 100, string packageName = "")
+
+        private SceneHandle GetSceneHandle(string sceneAssetName, LoadSceneMode sceneMode = LoadSceneMode.Single, LocalPhysicsMode localPhysicsMode = LocalPhysicsMode.None, bool suspendLoad = false, int priority = 100, string packageName = "")
         {
             if (string.IsNullOrEmpty(packageName))
             {
-                return YooAssets.LoadSceneAsync(sceneAssetName, sceneMode, suspendLoad, (uint)priority);
+                return YooAssets.LoadSceneAsync(sceneAssetName, sceneMode, localPhysicsMode, suspendLoad, (uint)priority);
             }
 
             var package = YooAssets.GetPackage(packageName);
-            return package.LoadSceneAsync(sceneAssetName, sceneMode, suspendLoad, (uint)priority);
+            return package.LoadSceneAsync(sceneAssetName, sceneMode, localPhysicsMode, suspendLoad, (uint)priority);
         }
-        
+
         /// <summary>
         /// 异步加载场景。
         /// </summary>
@@ -452,7 +452,7 @@ namespace GameFramework.Scene
         /// <param name="gcCollect">加载场景是否回收垃圾。</param>
         /// <param name="packageName">指定资源包的名称。不传使用默认资源包</param>
         /// <param name="userData">用户自定义数据。</param>
-        public async UniTaskVoid LoadScene(string sceneAssetName, LoadSceneCallbacks loadSceneCallbacks = null, LoadSceneMode sceneMode = LoadSceneMode.Single, 
+        public async UniTaskVoid LoadScene(string sceneAssetName, LoadSceneCallbacks loadSceneCallbacks = null, LoadSceneMode sceneMode = LoadSceneMode.Single,
             bool suspendLoad = false, int priority = 100, bool gcCollect = false, string packageName = "", object userData = null)
         {
             if (string.IsNullOrEmpty(sceneAssetName))
@@ -479,11 +479,11 @@ namespace GameFramework.Scene
             {
                 throw new GameFrameworkException(Utility.Text.Format("Scene asset '{0}' is already loaded.", sceneAssetName));
             }
-            
+
             float duration = Time.time;
 
             SceneHandle sceneHandle = null;
-            
+
             if (sceneMode == LoadSceneMode.Additive)
             {
                 if (_subScenes.TryGetValue(sceneAssetName, out sceneHandle))
@@ -491,7 +491,7 @@ namespace GameFramework.Scene
                     Log.Warning($"Could not load subScene while already loaded. Scene: {sceneAssetName}");
                     return;
                 }
-                sceneHandle = GetSceneHandle(sceneAssetName, sceneMode, suspendLoad, priority, packageName);
+                sceneHandle = GetSceneHandle(sceneAssetName, sceneMode,LocalPhysicsMode.None, suspendLoad, priority, packageName);
 
                 _subScenes.Add(sceneAssetName, sceneHandle);
             }
@@ -502,17 +502,17 @@ namespace GameFramework.Scene
                     Log.Warning($"Could not load MainScene while loading. CurrentMainScene: {_currentMainSceneName}.");
                     return;
                 }
-                sceneHandle = GetSceneHandle(sceneAssetName, sceneMode, suspendLoad, priority, packageName);
+                sceneHandle = GetSceneHandle(sceneAssetName, sceneMode,LocalPhysicsMode.None, suspendLoad, priority, packageName);
 
                 _currentMainSceneName = sceneAssetName;
-                
+
                 _currentMainScene = sceneHandle;
-                
+
                 GameModule.Resource.ForceUnloadUnusedAssets(gcCollect);
             }
-            
+
             m_LoadingSceneAssetNames.Add(sceneAssetName);
-            
+
             if (sceneHandle is { IsValid: true })
             {
                 if (loadSceneCallbacks != null)
@@ -524,31 +524,31 @@ namespace GameFramework.Scene
                             duration = Time.time - duration;
 
                             loadSceneCallbacks.LoadSceneSuccessCallback(sceneAssetName, sceneHandle.SceneObject, duration, userData);
-                        };   
+                        };
                     }
-                
+
                     if (loadSceneCallbacks.LoadSceneUpdateCallback != null)
                     {
                         while (!sceneHandle.IsDone)
                         {
                             await UniTask.Yield();
-                
+
                             loadSceneCallbacks.LoadSceneUpdateCallback?.Invoke(sceneAssetName, sceneHandle.Progress, userData);
                         }
                     }
                 }
-                
+
                 sceneHandle.Completed += _ =>
                 {
                     duration = Time.time - duration;
 
                     m_LoadSceneCallbacks.LoadSceneSuccessCallback(sceneAssetName, sceneHandle.SceneObject, duration, userData);
                 };
-                
+
                 while (!sceneHandle.IsDone)
                 {
                     await UniTask.Yield();
-                
+
                     m_LoadSceneCallbacks.LoadSceneUpdateCallback?.Invoke(sceneAssetName, sceneHandle.Progress, userData);
                 }
             }
@@ -577,26 +577,26 @@ namespace GameFramework.Scene
                 }
                 return;
             }
-            
+
             _subScenes.TryGetValue(sceneAssetName, out SceneHandle subScene);
-            
+
             if (subScene != null)
             {
                 if (subScene.SceneObject == default)
                 {
                     Log.Error($"Could not unload Scene while not loaded. Scene: {sceneAssetName}");
-                    
+
                     if (unloadSceneCallbacks is { UnloadSceneFailureCallback: not null })
                     {
                         unloadSceneCallbacks.UnloadSceneFailureCallback(sceneAssetName, userData);
                     }
-                    
+
                     return;
                 }
                 _subScenes.Remove(sceneAssetName);
-                
+
                 UnloadSceneOperation unloadSceneOperation = subScene.UnloadAsync();
-                
+
                 unloadSceneOperation.Completed += operation =>
                 {
                     if (operation.Status == EOperationStatus.Failed)
@@ -616,12 +616,12 @@ namespace GameFramework.Scene
                 };
                 return;
             }
-            
+
             if (unloadSceneCallbacks is { UnloadSceneFailureCallback: not null })
             {
                 unloadSceneCallbacks.UnloadSceneFailureCallback(sceneAssetName, userData);
             }
-            
+
             Log.Error($"Unload Scene Failed sceneAssetName:{sceneAssetName}");
         }
         #endregion
@@ -674,7 +674,7 @@ namespace GameFramework.Scene
             Log.Warning($"IsMainScene invalid location:{sceneAssetName}");
             return false;
         }
-        
+
         /// <summary>
         /// 是否为主场景。
         /// </summary>
@@ -682,19 +682,30 @@ namespace GameFramework.Scene
         /// <returns>是否主场景。</returns>
         public bool IsMainScene(string sceneAssetName)
         {
-            if (_currentMainSceneName.Equals(sceneAssetName))
+            // 获取当前激活的场景  
+            UnityEngine.SceneManagement.Scene currentScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();  
+             if (_currentMainSceneName.Equals(sceneAssetName))
             {
-                if (_currentMainScene != null)
+                if (_currentMainScene == null)
                 {
-                    return _currentMainScene.IsMainScene();
+                    return false;
                 }
+                // 判断当前场景是否是主场景  
+                if (currentScene.name == _currentMainScene.SceneName)
+                {
+                    return true;
+                }
+                    
+                return _currentMainScene.SceneName == currentScene.name;
+
+            }
+
+            // 判断当前场景是否是主场景  
+            if (currentScene.name == _currentMainScene?.SceneName)
+            {
                 return true;
             }
-            _subScenes.TryGetValue(sceneAssetName, out SceneHandle subScene);
-            if (subScene != null)
-            {
-                return subScene.IsMainScene();
-            }
+
             Log.Warning($"IsMainScene invalid location:{sceneAssetName}");
             return false;
         }

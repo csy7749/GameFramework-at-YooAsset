@@ -63,7 +63,7 @@ namespace GameMain
                 LoadStyle.StyleEnum.Style_Clear,
                 () =>
                 {
-                    GameModule.Resource.ClearUnusedCacheFilesAsync();
+                    GameModule.Resource.ClearCacheFilesAsync();
                     Application.Quit();
                 }, () => { OnContinue(null); });
         }
